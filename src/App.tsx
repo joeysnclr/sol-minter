@@ -1,5 +1,5 @@
 import "./App.css";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import Home from "./Home";
 
@@ -20,85 +20,118 @@ import {
 } from "@solana/wallet-adapter-react";
 
 import { WalletDialogProvider } from "@solana/wallet-adapter-material-ui";
-import { createTheme, ThemeProvider } from "@material-ui/core";
+import { createTheme, Input, ThemeProvider } from "@material-ui/core";
 
-const treasury = new anchor.web3.PublicKey(
-  process.env.REACT_APP_TREASURY_ADDRESS!
-);
+const network = "mainnet-beta" as WalletAdapterNetwork;
 
-const config = new anchor.web3.PublicKey(
-  process.env.REACT_APP_CANDY_MACHINE_CONFIG!
-);
-
-const candyMachineId = new anchor.web3.PublicKey(
-  process.env.REACT_APP_CANDY_MACHINE_ID!
-);
-
-const network = process.env.REACT_APP_SOLANA_NETWORK as WalletAdapterNetwork;
-
-const rpcHost = process.env.REACT_APP_SOLANA_RPC_HOST!;
+const rpcHost = "https://api.mainnet-beta.solana.com";
 const connection = new anchor.web3.Connection(rpcHost);
 
-const startDateSeed = parseInt(process.env.REACT_APP_CANDY_START_DATE!, 10);
+const startDateSeed = parseInt("1639420418", 10);
 
 const txTimeout = 30000; // milliseconds (confirm this works for your project)
 
 const theme = createTheme({
-    palette: {
-        type: 'dark',
+  palette: {
+    type: "dark",
+  },
+  overrides: {
+    MuiButtonBase: {
+      root: {
+        justifyContent: "flex-start",
+      },
     },
-    overrides: {
-        MuiButtonBase: {
-            root: {
-                justifyContent: 'flex-start',
-            },
-        },
-        MuiButton: {
-            root: {
-                textTransform: undefined,
-                padding: '12px 16px',
-            },
-            startIcon: {
-                marginRight: 8,
-            },
-            endIcon: {
-                marginLeft: 8,
-            },
-        },
+    MuiButton: {
+      root: {
+        textTransform: undefined,
+        padding: "12px 16px",
+      },
+      startIcon: {
+        marginRight: 8,
+      },
+      endIcon: {
+        marginLeft: 8,
+      },
     },
+  },
 });
 
 const App = () => {
+  const [treasury, setTreasury] = useState(
+    "BJomJVCbjz22kd84scx7X3eqMTBmuqZ4nhiFR7Cvm6dh"
+  );
+  const [config, setConfig] = useState(
+    "GyXJT63bA7oqT3M1fVfG9RHxCieyChP5bH8YNZsDqFEc"
+  );
+  const [candyMachineId, setCandyMachineId] = useState(
+    "8ZjzRkrUPitXCBSp65uK5FsT2476sLZ9NSqtd8kCQJoh"
+  );
   const endpoint = useMemo(() => clusterApiUrl(network), []);
+
+  const [formSubmitted, setFormSubmitted] = useState(false);
 
   const wallets = useMemo(
     () => [
-        getPhantomWallet(),
-        getSlopeWallet(),
-        getSolflareWallet(),
-        getSolletWallet({ network }),
-        getSolletExtensionWallet({ network })
+      getPhantomWallet(),
+      getSlopeWallet(),
+      getSolflareWallet(),
+      getSolletWallet({ network }),
+      getSolletExtensionWallet({ network }),
     ],
     []
   );
 
   return (
-      <ThemeProvider theme={theme}>
-        <ConnectionProvider endpoint={endpoint}>
-          <WalletProvider wallets={wallets} autoConnect={true}>
-            <WalletDialogProvider>
+    <ThemeProvider theme={theme}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          setFormSubmitted(true);
+        }}
+      >
+        <Input
+          type="text"
+          placeholder="treasury"
+          value={treasury}
+          onChange={(e) => {
+            setTreasury(e.target.value);
+          }}
+        />
+        <Input
+          type="text"
+          placeholder="config"
+          value={config}
+          onChange={(e) => {
+            setConfig(e.target.value);
+          }}
+        />
+        <Input
+          type="text"
+          placeholder="candyMachine"
+          value={candyMachineId}
+          onChange={(e) => {
+            setCandyMachineId(e.target.value);
+          }}
+        />
+        <Input type="submit" value="Submit" />
+      </form>
+      <ConnectionProvider endpoint={endpoint}>
+        <WalletProvider wallets={wallets} autoConnect={true}>
+          <WalletDialogProvider>
+            {formSubmitted && (
               <Home
-                candyMachineId={candyMachineId}
-                config={config}
+                candyMachineId={new anchor.web3.PublicKey(candyMachineId)}
+                config={new anchor.web3.PublicKey(config)}
                 connection={connection}
                 startDate={startDateSeed}
-                treasury={treasury}
+                treasury={new anchor.web3.PublicKey(treasury)}
                 txTimeout={txTimeout}
               />
-            </WalletDialogProvider>
-          </WalletProvider>
-        </ConnectionProvider>
-      </ThemeProvider>
+            )}
+          </WalletDialogProvider>
+        </WalletProvider>
+      </ConnectionProvider>
+    </ThemeProvider>
   );
 };
 
