@@ -197,7 +197,7 @@ const Home = (props: HomeProps) => {
             <MintButton
               disabled={isSoldOut || isMinting || !isActive}
               onClick={() => {
-                for (let step = 0; step < 5; step++) {
+                for (let step = 0; step < mintQuantity; step++) {
                   console.log("minting");
                   onMint();
                 }
